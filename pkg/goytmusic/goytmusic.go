@@ -21,7 +21,7 @@ type Client struct {
 	common service
 
 	// Http client to communicate with the API
-	client *http.Client
+	httpClient *http.Client
 	// Base url for making requests.
 	baseURL *url.URL
 }
@@ -51,7 +51,7 @@ func NewClient(httpClient *http.Client) *Client {
 		return transport.RoundTrip(req)
 	})
 
-	c := &Client{client: &httpClient2}
+	c := &Client{httpClient: &httpClient2}
 
 	c.baseURL, _ = url.Parse(defaultBaseURL)
 
@@ -65,10 +65,10 @@ func (c *Client) WithAuthCookie(cookie string) *Client {
 	sapisid := sapisidFromCookie(cookie)
 
 	c2 := *c
-	*c2.client = *c.client
-	transport := c2.client.Transport
+	*c2.httpClient = *c.httpClient
+	transport := c2.httpClient.Transport
 
-	c2.client.Transport = roundTripperFunc(
+	c2.httpClient.Transport = roundTripperFunc(
 		func(req *http.Request) (*http.Response, error) {
 			req = req.Clone(req.Context())
 
