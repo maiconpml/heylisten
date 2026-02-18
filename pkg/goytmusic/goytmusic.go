@@ -1,8 +1,11 @@
 package goytmusic
 
 import (
+	"bytes"
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -109,6 +112,54 @@ func sapisidFromCookie(cookie string) string {
 		}
 	}
 	return ""
+}
+
+// NewRequest creates and returns a request given the request method, url and body.
+// The url must be given as a string and relative to the baseURL.
+func (c *Client) NewRequest(method, urlStr string, body any) (*http.Request, error) {
+	u, err := c.baseURL.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf io.ReadWriter
+	if body != nil {
+		buf = &bytes.Buffer{}
+		enc := json.NewEncoder(buf)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(body); err != nil {
+			return nil, err
+		}
+	}
+
+	req, err := http.NewRequest(method, u.String(), buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// Do sends an API request and returns the API response. The reponse
+// body is JSON decoded and put in v. The method also closes the response body.
+func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return resp, fmt.Errorf("api error: status %d", resp.StatusCode)
+	}
+
+	if v != nil {
+		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+			return resp, err
+		}
+	}
+
+	return resp, nil
 }
 
 // roundTripperFunc creates a RoundTripper (transport).
