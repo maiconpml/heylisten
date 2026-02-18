@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultBaseURL   = "https://music.youtube.com/youtube/v1/"
-	defaultUserAgent = "ytmusic/0.0.0"
+	defaultBaseURL   = "https://music.youtube.com/youtubei/v1/"
+	defaultUserAgent = "go-ytm/0.0.0"
 	defaultOrigin    = "https://music.youtube.com"
 )
 
