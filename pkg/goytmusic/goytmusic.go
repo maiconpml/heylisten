@@ -23,6 +23,8 @@ type Client struct {
 	// Base service for all other services to share
 	common service
 
+	commonContext Context
+
 	// Http client to communicate with the API
 	httpClient *http.Client
 	// Base url for making requests.
@@ -31,6 +33,15 @@ type Client struct {
 
 type service struct {
 	client *Client
+}
+
+type Context struct {
+	Client struct {
+		ClientName    string `json:"clientName"`
+		ClientVersion string `json:"clientVersion"`
+		HL            string `json:"hl"`
+		GL            string `json:"gl"`
+	} `json:"client"`
 }
 
 // NewClient creats a client
@@ -59,6 +70,11 @@ func NewClient(httpClient *http.Client) *Client {
 	c.baseURL, _ = url.Parse(defaultBaseURL)
 
 	c.common.client = c
+
+	c.commonContext.Client.ClientName = "WEB_REMIX"
+	c.commonContext.Client.ClientVersion = "1.20240314.01.00"
+	c.commonContext.Client.HL = "en"
+	c.commonContext.Client.GL = "US"
 
 	return c
 }
@@ -160,6 +176,15 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+// BrowseBody returns a body for the browse endpoint requests.
+// The body is composed by a browseID (see docs) and a default context.
+func (c *Client) BrowseBody(browseID string) any {
+	return struct {
+		BrowseID string  `json:"browseId"`
+		Context  Context `json:"context"`
+	}{BrowseID: browseID, Context: c.commonContext}
 }
 
 // roundTripperFunc creates a RoundTripper (transport).
