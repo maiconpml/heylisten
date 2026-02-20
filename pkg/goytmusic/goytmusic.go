@@ -25,6 +25,8 @@ type Client struct {
 
 	commonContext Context
 
+	// Services for each accessible resource of Innertube API
+	Playlists *PlaylistsService
 	// Http client to communicate with the API
 	httpClient *http.Client
 	// Base url for making requests.
@@ -76,6 +78,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.commonContext.Client.HL = "en"
 	c.commonContext.Client.GL = "US"
 
+	c.Playlists = (*PlaylistsService)(&c.common)
 	return c
 }
 
