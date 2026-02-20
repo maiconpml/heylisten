@@ -27,6 +27,10 @@ type Client struct {
 
 	// Services for each accessible resource of Innertube API
 	Playlists *PlaylistsService
+	Tracks    *TracksService
+
+	isGuest bool
+
 	// Http client to communicate with the API
 	httpClient *http.Client
 	// Base url for making requests.
@@ -88,6 +92,7 @@ func (c *Client) WithAuthCookie(cookie string) *Client {
 
 	c2 := *c
 	*c2.httpClient = *c.httpClient
+	c2.isGuest = (cookie == "")
 	transport := c2.httpClient.Transport
 
 	c2.httpClient.Transport = roundTripperFunc(
