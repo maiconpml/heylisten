@@ -12,9 +12,9 @@ type PlaylistsService service
 
 type Playlist struct {
 	Name       string
-	BrID       string
 	Author     *string
-	AuthorBrID *string
+	BrowseID       string
+	AuthorBrowseID *string
 }
 
 // toPlaylist parses a musicTwoRowItem struct to a Playlist
@@ -28,12 +28,12 @@ func (mt *musicTowRowItem) toPlaylist() *Playlist {
 		pl.Author = runs[0].Text
 
 		if runs[0].NavEndpoint != nil && runs[0].NavEndpoint.BrowseEndpoint != nil {
-			pl.AuthorBrID = runs[0].NavEndpoint.BrowseEndpoint.BrowseID
+			pl.AuthorBrowseID = runs[0].NavEndpoint.BrowseEndpoint.BrowseID
 		}
 	}
 
 	if mt.MusicTwoRow.NavEndpoint != nil && mt.MusicTwoRow.NavEndpoint.BrowseEndpoint != nil {
-		pl.BrID = *mt.MusicTwoRow.NavEndpoint.BrowseEndpoint.BrowseID
+		pl.BrowseID = *mt.MusicTwoRow.NavEndpoint.BrowseEndpoint.BrowseID
 	}
 
 	return pl
