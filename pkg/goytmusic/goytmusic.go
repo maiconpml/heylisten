@@ -164,26 +164,25 @@ func (c *Client) NewRequest(method, urlStr string, body any) (*http.Request, err
 	return req, nil
 }
 
-// Do sends an API request and returns the API response. The reponse
-// body is JSON decoded and put in v. The method also closes the response body.
-func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
+// Do sends an API request and returns the API response body as a byte slice.
+// The method also closes the response body.
+func (c *Client) Do(req *http.Request) ([]byte, *http.Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return resp, fmt.Errorf("api error: status %d", resp.StatusCode)
+		return nil, resp, fmt.Errorf("api error: status %d", resp.StatusCode)
 	}
 
-	if v != nil {
-		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
-			return resp, err
-		}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp, err
 	}
 
-	return resp, nil
+	return body, resp, nil
 }
 
 // BrowseBody returns a body for the browse endpoint requests.
@@ -200,4 +199,9 @@ type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (fn roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return fn(r)
+}
+
+// Ptr returns a pointer to value v
+func Ptr[T any](v T) *T {
+	return &v
 }
