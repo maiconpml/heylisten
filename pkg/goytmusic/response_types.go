@@ -10,37 +10,41 @@ package goytmusic
 type libraryCollectionListResponse struct {
 	Contents struct {
 		SingleColumn struct {
-			Tabs []struct {
-				TabRenderer struct {
-					Content struct {
-						SectionList struct {
-							Contents []struct {
-								GridRenderer struct {
-									Items []musicTowRowItem `json:"items"`
-								} `json:"gridRenderer"`
-							} `json:"contents"`
-						} `json:"sectionListRenderer"`
-					} `json:"content"`
-				} `json:"tabRenderer"`
-			} `json:"tabs"`
+			Tabs []tab `json:"tabs"`
 		} `json:"singleColumnBrowseResultsRenderer"`
 	} `json:"contents"`
 }
 
+type tab struct {
+	TabRenderer struct {
+		Content struct {
+			SectionList struct {
+				Contents []sectionContent `json:"contents"`
+			} `json:"sectionListRenderer"`
+		} `json:"content"`
+	} `json:"tabRenderer"`
+}
+
+type sectionContent struct {
+	GridRenderer               *gridRenderer               `json:"gridRenderer,omitempty"`
+}
+
+type gridRenderer struct {
+	Items []musicTowRowItem `json:"items"`
+}
 type musicTowRowItem struct {
 	MusicTwoRow struct {
-		Title struct {
-			Runs []run `json:"runs"`
-		} `json:"title"`
-		Subtitle struct {
-			Runs []run `json:"runs"`
-		} `json:"subtitle"`
-		NavEndpoint *navigationEndpoint `json:"navigationEndpoint,omitempty"`
+		Title    text                `json:"title"`
+		Subtitle text                `json:"subtitle"`
+		Endpoint *navigationEndpoint `json:"navigationEndpoint,omitempty"`
 	} `json:"musicTwoRowItemRenderer"`
 }
 
+type text struct {
+	Runs []run `json:"runs"`
+}
 type run struct {
-	Text        *string             `json:"text"`
+	Text        string              `json:"text"`
 	NavEndpoint *navigationEndpoint `json:"navigationEndpoint,omitempty"`
 }
 
@@ -48,4 +52,18 @@ type navigationEndpoint struct {
 	BrowseEndpoint *struct {
 		BrowseID *string `json:"browseId"`
 	} `json:"browseEndpoint,omitempty"`
+
+// ExtractPlaylists extracts playlists from a library response
+func (r *libraryCollectionListResponse) ExtractPlaylists() []*Playlist {
+	var playlists []*Playlist
+	for _, tab := range r.Contents.SingleColumn.Tabs {
+		for _, section := range tab.TabRenderer.Content.SectionList.Contents {
+			if section.GridRenderer != nil {
+				for _, item := range section.GridRenderer.Items {
+					playlists = append(playlists, item.toPlaylist())
+				}
+			}
+		}
+	}
+	return playlists
 }

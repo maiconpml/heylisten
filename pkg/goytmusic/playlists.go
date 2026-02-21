@@ -11,9 +11,9 @@ const (
 type PlaylistsService service
 
 type Playlist struct {
-	Name       string
-	Author     *string
+	Name           string
 	BrowseID       string
+	Author         *string
 	AuthorBrowseID *string
 }
 
@@ -21,33 +21,25 @@ type Playlist struct {
 func (mt *musicTowRowItem) toPlaylist() *Playlist {
 	pl := &Playlist{}
 	if len(mt.MusicTwoRow.Title.Runs) > 0 {
-		pl.Name = *mt.MusicTwoRow.Title.Runs[0].Text
+		pl.Name = mt.MusicTwoRow.Title.Runs[0].Text
 	}
 	if len(mt.MusicTwoRow.Subtitle.Runs) > 0 {
 		runs := mt.MusicTwoRow.Subtitle.Runs
-		pl.Author = runs[0].Text
+		pl.Author = &runs[0].Text
 
 		if runs[0].NavEndpoint != nil && runs[0].NavEndpoint.BrowseEndpoint != nil {
 			pl.AuthorBrowseID = runs[0].NavEndpoint.BrowseEndpoint.BrowseID
 		}
 	}
 
-	if mt.MusicTwoRow.NavEndpoint != nil && mt.MusicTwoRow.NavEndpoint.BrowseEndpoint != nil {
-		pl.BrowseID = *mt.MusicTwoRow.NavEndpoint.BrowseEndpoint.BrowseID
+	if mt.MusicTwoRow.Endpoint != nil && mt.MusicTwoRow.Endpoint.BrowseEndpoint != nil {
+		pl.BrowseID = *mt.MusicTwoRow.Endpoint.BrowseEndpoint.BrowseID
 	}
 
 	return pl
 }
 
-// toPlaylistCollection parses a libraryCollectionListResponse to a []*Playlist
-func (lc *libraryCollectionListResponse) toPlaylistCollection() []*Playlist {
-	items := lc.Contents.SingleColumn.Tabs[0].TabRenderer.Content.SectionList.Contents[0].GridRenderer.Items
-
-	var plCollection []*Playlist
-	for _, it := range items[1:] {
-		plCollection = append(plCollection, it.toPlaylist())
 	}
-	return plCollection
 }
 
 // ListLiked retrieves and returns an array of Playlist. This array
@@ -69,7 +61,11 @@ func (s *PlaylistsService) ListLiked() ([]*Playlist, error) {
 		return nil, err
 	}
 
-	plColl := raw.toPlaylistCollection()
+	items := raw.ExtractPlaylists()
 
-	return plColl, nil
+	if len(items) > 2 {
+		return items[2:], nil
+	}
+	return items, nil
 }
+
