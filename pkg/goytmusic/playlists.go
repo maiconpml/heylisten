@@ -9,10 +9,14 @@ import (
 const (
 	brIDLikedPlaylists = "FEmusic_liked_playlists"
 
-	pathRootGridRendererItems = "contents.singleColumnBrowseResultsRenderer.tabs.0.tabRenderer.content.sectionListRenderer.contents.0.gridRenderer.items"
-	pathNavEndpointBrowseID   = "navigationEndpoint.browseEndpoint.browseId"
-	pathItemTitle             = "title.runs.0"
-	pathItemSubtitle          = "subtitle.runs.0"
+	// json paths to extract data from API responses
+	pathRootSingleColumnRenderer = "contents.singleColumnBrowseResultsRenderer"
+	pathGridRendererItems        = "gridRenderer.items"
+	pathNavEndpointBrowseID      = "navigationEndpoint.browseEndpoint.browseId"
+	pathItemTitle                = "title.runs.0"
+	pathItemSubtitle             = "subtitle.runs.0"
+
+	pathTab0Contents0 = "tabs.0.tabRenderer.content.sectionListRenderer.contents.0"
 )
 
 type PlaylistsService service
@@ -53,7 +57,7 @@ func (s *PlaylistsService) ListLiked() ([]*Playlist, error) {
 
 
 func extractPlaylists(b []byte) []*Playlist {
-	results := gjson.GetBytes(b, pathRootGridRendererItems)
+	results := gjson.GetBytes(b, pathRootSingleColumnRenderer+"."+pathTab0Contents0+"."+pathGridRendererItems)
 
 	var playlists []*Playlist
 	results.ForEach(func(key, value gjson.Result) bool {
