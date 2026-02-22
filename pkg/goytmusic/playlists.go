@@ -17,6 +17,19 @@ const (
 	pathItemSubtitle             = "subtitle.runs.0"
 
 	pathTab0Contents0 = "tabs.0.tabRenderer.content.sectionListRenderer.contents.0"
+
+	pathMusicResponsiveHeader       = "musicResponsiveHeaderRenderer"
+	pathMusicEditablePlaylistHeader = "musicEditablePlaylistDetailHeaderRenderer.header"
+
+	pathRootTwoColumnRenderer = "contents.twoColumnBrowseResultsRenderer"
+	pathTracks                = "secondaryContents.sectionListRenderer.contents.0.musicPlaylistShelfRenderer.contents"
+	pathPlaylistTrack         = "musicResponsiveListItemRenderer.flexColumns"
+	pathTrackAttribute        = "musicResponsiveListItemFlexColumnRenderer.text.runs"
+	pathTrackName             = "text"
+	pathNavEndpointVideoID    = "navigationEndpoint.watchEndpoint.videoId"
+	pathPlaylistAuthor        = "facepile.avatarStackViewModel"
+	pathPlaylistAuthorNav     = "rendererContext.commandContext.onTap.innertubeCommand.browseEndpoint.browseId"
+	pathTextContent           = "text.content"
 )
 
 type PlaylistsService service
@@ -54,7 +67,31 @@ func (s *PlaylistsService) ListLiked() ([]*Playlist, error) {
 	return nil, nil
 }
 
+// Get retrieves and returns the Playlist having the provided id.
+func (s *PlaylistsService) Get(id *string) (*Playlist, error) {
+	if s.client.isGuest {
+		return nil, errors.New("Client is not authenticated")
+	}
+	u := "browse"
+	body := s.client.BrowseBody(*id)
+	req, err := s.client.NewRequest("POST", u, body)
+	if err != nil {
+		return nil, err
+	}
 
+	respBody, _, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	pl := extractPlaylistWithTracks(respBody)
+	pl.BrowseID = *id
+
+	return pl, nil
+}
+
+// Parses a JSON in []byte format into an array of Playlist pointers
+// Expects the brIDLikedPlaylists endpoint JSON reponse
 func extractPlaylists(b []byte) []*Playlist {
 	results := gjson.GetBytes(b, pathRootSingleColumnRenderer+"."+pathTab0Contents0+"."+pathGridRendererItems)
 
@@ -69,6 +106,9 @@ func extractPlaylists(b []byte) []*Playlist {
 	return playlists
 }
 
+// Parses res into a Playlist without loading the tracks
+// Expects the playlist contained in the brIDLikedPlaylists
+// endpoint JSON reponse
 func extractPlaylist(res *gjson.Result) *Playlist {
 	render := res.Get("musicTwoRowItemRenderer")
 	if !render.Exists() {
@@ -84,5 +124,29 @@ func extractPlaylist(res *gjson.Result) *Playlist {
 	if author.Exists() {
 		pl.Author = extractUser(&author)
 	}
+	return pl
+}
+
+// Parses the JSON in b into a Playlist
+// Expects the playlist of the browseId=VLPL... endpoint JSON response
+func extractPlaylistWithTracks(b []byte) *Playlist {
+	tracks := gjson.GetBytes(b, pathRootTwoColumnRenderer+"."+pathTracks)
+	plHeader := gjson.GetBytes(b, pathRootTwoColumnRenderer+"."+pathTab0Contents0)
+	plHeaderAux := plHeader.Get(pathMusicEditablePlaylistHeader)
+	if plHeaderAux.Exists() {
+		plHeader = plHeaderAux
+	}
+	plHeader = plHeader.Get(pathMusicResponsiveHeader)
+
+	pl := &Playlist{}
+
+	pl.Name = plHeader.Get(pathItemTitle + "." + pathTrackName).String()
+	pl.Author = extractUser(&plHeader)
+	tracks.ForEach(func(key, value gjson.Result) bool {
+		if tr := extractTrack(&value); tr != nil {
+			pl.Tracks = append(pl.Tracks, tr)
+		}
+		return true
+	})
 	return pl
 }
