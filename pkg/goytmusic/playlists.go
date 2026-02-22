@@ -24,9 +24,8 @@ type PlaylistsService service
 type Playlist struct {
 	Name           string
 	BrowseID       string
-	Author         *string
-	AuthorBrowseID *string
 	Tracks         []*Track
+	Author   *User
 }
 
 // ListLiked retrieves and returns an array of Playlist. This array
@@ -83,11 +82,7 @@ func extractPlaylist(res *gjson.Result) *Playlist {
 
 	author := render.Get(pathItemSubtitle)
 	if author.Exists() {
-		pl.Author = Ptr(author.Get("text").String())
-		authorBrowseID := author.Get(pathNavEndpointBrowseID).String()
-		if authorBrowseID != "" {
-			pl.AuthorBrowseID = Ptr(authorBrowseID)
-		}
+		pl.Author = extractUser(&author)
 	}
 	return pl
 }
