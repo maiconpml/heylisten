@@ -11,9 +11,9 @@ type Album struct {
 // Expects the Album contained in browseId=VLPL... JSON response
 func extractAlbum(res *gjson.Result) *Album {
 	alb := &Album{}
-	alb.Name = res.Get(pathTrackName).String()
+	alb.Name = res.Get(pText).String()
 
-	buf := res.Get(pathNavEndpointBrowseID)
+	buf := res.Get(joinPaths(pNavEndpoint, pBrowseEndID))
 	if buf.Exists() {
 		alb.BrowseID = buf.String()
 	}

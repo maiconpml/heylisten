@@ -71,11 +71,11 @@ func (s *PlaylistsService) Get(id *string) (*Playlist, error) {
 // Parses a JSON in []byte format into an array of Playlist pointers
 // Expects the brIDLikedPlaylists endpoint JSON reponse
 func extractPlaylists(b []byte) []*Playlist {
-	results := gjson.GetBytes(b, pathRootSingleColumnRenderer+"."+pathTab0Contents0+"."+pathGridRendererItems)
+	results := gjson.GetBytes(b, joinPaths(pSingleColumn, pTab0, pTabRendererContent, pSectionList, pContent0, pGridRendererItems))
 
 	var playlists []*Playlist
 	results.ForEach(func(key, value gjson.Result) bool {
-		if pl := extractPlaylist(&value); pl != nil {
+		if pl := extractPlaylist(value); pl != nil {
 			playlists = append(playlists, pl)
 		}
 		return true
@@ -87,20 +87,20 @@ func extractPlaylists(b []byte) []*Playlist {
 // Parses res into a Playlist without loading the tracks
 // Expects the playlist contained in the brIDLikedPlaylists
 // endpoint JSON reponse
-func extractPlaylist(res *gjson.Result) *Playlist {
-	render := res.Get("musicTwoRowItemRenderer")
+func extractPlaylist(res gjson.Result) *Playlist {
+	render := res.Get(pMusicTwoRow)
 	if !render.Exists() {
 		return nil
 	}
 
 	pl := &Playlist{
-		Name:     render.Get(pathItemTitle + ".text").String(),
-		BrowseID: render.Get(pathNavEndpointBrowseID).String(),
+		Name:     render.Get(joinPaths(pTitle, pRun, pText)).String(),
+		BrowseID: render.Get(joinPaths(pTitle, pRun, pNavEndpoint, pBrowseEndID)).String(),
 	}
 
-	author := render.Get(pathItemSubtitle)
+	author := render.Get(joinPaths(pSubtitle, pRun))
 	if author.Exists() {
-		pl.Author = extractUser(&author)
+		pl.Author = extractUser(author)
 	}
 	return pl
 }
@@ -108,20 +108,20 @@ func extractPlaylist(res *gjson.Result) *Playlist {
 // Parses the JSON in b into a Playlist
 // Expects the playlist of the browseId=VLPL... endpoint JSON response
 func extractPlaylistWithTracks(b []byte) *Playlist {
-	tracks := gjson.GetBytes(b, pathRootTwoColumnRenderer+"."+pathTracks)
-	plHeader := gjson.GetBytes(b, pathRootTwoColumnRenderer+"."+pathTab0Contents0)
-	plHeaderAux := plHeader.Get(pathMusicEditablePlaylistHeader)
+	tracks := gjson.GetBytes(b, joinPaths(pTwoColumn, pSecContents, pSectionList, pContent0, pPlaylistShelf, pContents))
+	plHeader := gjson.GetBytes(b, joinPaths(pTwoColumn, pTab0, pTabRendererContent, pSectionList, pContent0))
+	plHeaderAux := plHeader.Get(pMusicEditablePlaylistHeader)
 	if plHeaderAux.Exists() {
 		plHeader = plHeaderAux
 	}
-	plHeader = plHeader.Get(pathMusicResponsiveHeader)
+	plHeader = plHeader.Get(pMusicResponsiveHeader)
 
 	pl := &Playlist{}
 
-	pl.Name = plHeader.Get(pathItemTitle + "." + pathTrackName).String()
-	pl.Author = extractUser(&plHeader)
+	pl.Name = plHeader.Get(joinPaths(pTitle, pRun, pText)).String()
+	pl.Author = extractUser(plHeader)
 	tracks.ForEach(func(key, value gjson.Result) bool {
-		if tr := extractTrack(&value); tr != nil {
+		if tr := extractTrack(value); tr != nil {
 			pl.Tracks = append(pl.Tracks, tr)
 		}
 		return true

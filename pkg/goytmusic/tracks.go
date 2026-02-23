@@ -1,6 +1,8 @@
 package goytmusic
 
-import "github.com/tidwall/gjson"
+import (
+	"github.com/tidwall/gjson"
+)
 
 type TracksService service
 
@@ -14,24 +16,25 @@ type Track struct {
 
 // Parses res into a Track struct
 // Expects the track contained in browseId=VLPL... endpoint JSON response
-func extractTrack(res *gjson.Result) *Track {
+func extractTrack(res gjson.Result) *Track {
 	tr := &Track{}
 
-	tr.Name = res.Get(pathPlaylistTrack + ".0." + pathTrackAttribute + ".0." + pathTrackName).String()
-	buf := res.Get(pathPlaylistTrack + ".0." + pathTrackAttribute + ".0." + pathNavEndpointVideoID)
+	name := res.Get(joinPaths(pRespListItem, pFlexColumn0, pRespListItemFlexColumn, pText, pRun))
+	tr.Name = name.Get(joinPaths(pText)).String()
+	buf := name.Get(joinPaths(pNavEndpoint, pWatchEndID))
 	if buf.Exists() {
 		tr.VideoID = Ptr(buf.String())
 	}
 
-	artists := res.Get(pathPlaylistTrack + ".1." + pathTrackAttribute)
+	artists := res.Get(joinPaths(pRespListItem, pFlexColumn1, pRespListItemFlexColumn, pText, pRuns))
 	artists.ForEach(func(key, value gjson.Result) bool {
-		if u := extractUser(&value); u != nil {
+		if u := extractUser(value); u != nil {
 			tr.Artists = append(tr.Artists, u)
 		}
 		return true
 	})
 
-	album := res.Get(pathPlaylistTrack + ".2." + pathTrackAttribute + ".0")
+	album := res.Get(joinPaths(pRespListItem, pFlexColumn2, pRespListItemFlexColumn, pText, pRun))
 	if album.Exists() {
 		tr.Album = extractAlbum(&album)
 	}

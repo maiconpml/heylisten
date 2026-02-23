@@ -1,25 +1,42 @@
 package goytmusic
 
+import "strings"
+
 const (
-	// json paths to extract data from API responses
-	pathRootSingleColumnRenderer = "contents.singleColumnBrowseResultsRenderer"
-	pathGridRendererItems        = "gridRenderer.items"
-	pathNavEndpointBrowseID      = "navigationEndpoint.browseEndpoint.browseId"
-	pathItemTitle                = "title.runs.0"
-	pathItemSubtitle             = "subtitle.runs.0"
-
-	pathTab0Contents0 = "tabs.0.tabRenderer.content.sectionListRenderer.contents.0"
-
-	pathMusicResponsiveHeader       = "musicResponsiveHeaderRenderer"
-	pathMusicEditablePlaylistHeader = "musicEditablePlaylistDetailHeaderRenderer.header"
-
-	pathRootTwoColumnRenderer = "contents.twoColumnBrowseResultsRenderer"
-	pathTracks                = "secondaryContents.sectionListRenderer.contents.0.musicPlaylistShelfRenderer.contents"
-	pathPlaylistTrack         = "musicResponsiveListItemRenderer.flexColumns"
-	pathTrackAttribute        = "musicResponsiveListItemFlexColumnRenderer.text.runs"
-	pathTrackName             = "text"
-	pathNavEndpointVideoID    = "navigationEndpoint.watchEndpoint.videoId"
-	pathPlaylistAuthor        = "facepile.avatarStackViewModel"
-	pathPlaylistAuthorNav     = "rendererContext.commandContext.onTap.innertubeCommand.browseEndpoint.browseId"
-	pathTextContent           = "text.content"
+	// json paths fragments to extract data from API responses
+	pSingleColumn                = "contents.singleColumnBrowseResultsRenderer"
+	pTwoColumn                   = "contents.twoColumnBrowseResultsRenderer"
+	pGridRendererItems           = "gridRenderer.items"
+	pTab0                        = "tabs.0"
+	pContent0                    = "contents.0"
+	pContents                    = "contents"
+	pTabRendererContent          = "tabRenderer.content"
+	pSectionList                 = "sectionListRenderer"
+	pMusicResponsiveHeader       = "musicResponsiveHeaderRenderer"
+	pMusicEditablePlaylistHeader = "musicEditablePlaylistDetailHeaderRenderer.header"
+	pSecContents                 = "secondaryContents"
+	pPlaylistShelf               = "musicPlaylistShelfRenderer"
+	pRespListItem                = "musicResponsiveListItemRenderer"
+	pRespListItemFlexColumn      = "musicResponsiveListItemFlexColumnRenderer"
+	pFlexColumn0                 = "flexColumns.0"
+	pFlexColumn1                 = "flexColumns.1"
+	pFlexColumn2                 = "flexColumns.2"
+	pMusicTwoRow                 = "musicTwoRowItemRenderer"
+	pRun                         = "runs.0"
+	pRuns                        = "runs"
+	pText                        = "text"
+	pNavEndpoint                 = "navigationEndpoint"
+	pBrowseEndID                 = "browseEndpoint.browseId"
+	pWatchEndID                  = "watchEndpoint.videoId"
+	pTitle                       = "title"
+	pSubtitle                    = "subtitle"
+	pFacepileStackView           = "facepile.avatarStackViewModel"
+	pRendCtxtInnertubeCommand    = "rendererContext.commandContext.onTap.innertubeCommand"
+	pContent                     = "content"
 )
+
+// joinPaths takes multiple strings s1, s2, ..., sn and join
+// them in s1.s2....sn
+func joinPaths(parts ...string) string {
+	return strings.Join(parts, ".")
+}

@@ -7,17 +7,17 @@ type User struct {
 	BrowseID *string
 }
 
-func extractUser(res *gjson.Result) *User {
+func extractUser(res gjson.Result) *User {
 	u := &User{}
-	if buf := res.Get(pathTrackName); buf.Exists() {
+	if buf := res.Get(pText); buf.Exists() {
 		u.Name = buf.String()
-	} else if buf := res.Get(pathPlaylistAuthor + "." + pathTextContent); buf.Exists() {
+	} else if buf := res.Get(joinPaths(pFacepileStackView, pText, pContent)); buf.Exists() {
 		u.Name = buf.String()
 	}
 
-	if buf := res.Get(pathNavEndpointBrowseID); buf.Exists() {
+	if buf := res.Get(joinPaths(pNavEndpoint, pBrowseEndID)); buf.Exists() {
 		u.BrowseID = Ptr(buf.String())
-	} else if buf := res.Get(pathPlaylistAuthor + "." + pathPlaylistAuthorNav); buf.Exists() {
+	} else if buf := res.Get(joinPaths(pFacepileStackView, pRendCtxtInnertubeCommand, pBrowseEndID)); buf.Exists() {
 		u.BrowseID = Ptr(buf.String())
 	}
 	return u
