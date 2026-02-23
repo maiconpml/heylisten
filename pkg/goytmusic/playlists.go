@@ -13,9 +13,9 @@ const (
 type PlaylistsService service
 
 type Playlist struct {
-	Name           string
-	BrowseID       string
-	Tracks         []*Track
+	Name     string
+	BrowseID string
+	Tracks   []*Track
 	Author   *User
 }
 
