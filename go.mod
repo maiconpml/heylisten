@@ -1,4 +1,4 @@
-module github/maiconpml/yt-music-tui
+module github.com/maiconpml/yt-music-tui
 
 go 1.25.7
 
