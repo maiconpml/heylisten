@@ -13,7 +13,7 @@ func extractAlbum(res *gjson.Result) *Album {
 	alb := &Album{}
 	alb.Name = res.Get(pText).String()
 
-	buf := res.Get(joinPaths(pNavEndpoint, pBrowseEndID))
+	buf := res.Get(joinPaths(pNavEndpoint, pBrowseEnd, pBrowseID))
 	if buf.Exists() {
 		alb.BrowseID = buf.String()
 	}

@@ -95,7 +95,7 @@ func extractPlaylist(res gjson.Result) *Playlist {
 
 	pl := &Playlist{
 		Name:     render.Get(joinPaths(pTitle, pRun, pText)).String(),
-		BrowseID: render.Get(joinPaths(pTitle, pRun, pNavEndpoint, pBrowseEndID)).String(),
+		BrowseID: render.Get(joinPaths(pTitle, pRun, pNavEndpoint, pBrowseEnd, pBrowseID)).String(),
 	}
 
 	author := render.Get(joinPaths(pSubtitle, pRun))

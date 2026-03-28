@@ -15,9 +15,9 @@ func extractUser(res gjson.Result) *User {
 		u.Name = buf.String()
 	}
 
-	if buf := res.Get(joinPaths(pNavEndpoint, pBrowseEndID)); buf.Exists() {
+	if buf := res.Get(joinPaths(pNavEndpoint, pBrowseEnd, pBrowseID)); buf.Exists() {
 		u.BrowseID = Ptr(buf.String())
-	} else if buf := res.Get(joinPaths(pFacepileStackView, pRendCtxtInnertubeCommand, pBrowseEndID)); buf.Exists() {
+	} else if buf := res.Get(joinPaths(pFacepileStackView, pRendCtxtInnertubeCommand, pBrowseEnd, pBrowseID)); buf.Exists() {
 		u.BrowseID = Ptr(buf.String())
 	}
 	return u
