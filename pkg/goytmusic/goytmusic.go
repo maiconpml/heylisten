@@ -68,6 +68,10 @@ func NewClient(httpClient *http.Client) *Client {
 		req.Header.Set("User-Agent", defaultUserAgent)
 		req.Header.Set("X-Origin", defaultOrigin)
 
+		query := req.URL.Query()
+		query.Set("prettyPrint", "false")
+		req.URL.RawQuery = query.Encode()
+
 		return transport.RoundTrip(req)
 	})
 
