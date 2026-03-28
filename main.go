@@ -1,52 +1,75 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
-	"github/maiconpml/yt-music-tui/pkg/ytmusic"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/maiconpml/yt-music-tui/internal/audio"
+	"github.com/maiconpml/yt-music-tui/internal/config"
+	"github.com/maiconpml/yt-music-tui/internal/tui"
+	"github.com/maiconpml/yt-music-tui/internal/ytdlp"
+	"github.com/maiconpml/yt-music-tui/pkg/goytmusic"
 )
 
 func main() {
-	cookie := os.Getenv("AUTH_COOKIE")
-	if cookie == "" {
-		log.Println("WARNING: AUTH_COOKIE environment variable is not set. This will likely fail.")
+	if err := ytdlp.CheckDependencies(); err != nil {
+		log.Fatalf("Dependency error: %v", err)
 	}
 
-	client := ytmusic.NewClient(&http.Client{}).WithAuthCookie(cookie)
+	if err := audio.Init(); err != nil {
+		log.Printf("Warning: Could not initialize audio system: %v\nAudio playback will not work.", err)
+	} else {
+		defer audio.Quit()
+	}
+
+	cookiePath, err := config.GetCookiePath()
+	if err != nil {
+		log.Fatalf("Error getting config path: %v", err)
+	}
+
+	if _, err := os.Stat(cookiePath); os.IsNotExist(err) {
+		fmt.Printf("No authentication cookie found. Please paste your YouTube Music cookie string:\n> ")
+		reader := bufio.NewReader(os.Stdin)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatalf("Error reading input: %v", err)
+		}
+		input = strings.TrimSpace(input)
+		if input == "" {
+			log.Fatalf("Cookie cannot be empty")
+		}
+		if err := config.SaveCookie(input); err != nil {
+			log.Fatalf("Error saving cookie: %v", err)
+		}
+		fmt.Println("Cookie saved successfully!")
+	}
+
+	cookieString, err := config.LoadCookie()
+	if err != nil {
+		log.Fatalf("Error loading cookie: %v", err)
+	}
+
+	if err := ytdlp.Init(cookiePath); err != nil {
+		log.Fatal("error on ytdlp initializing: %v", err)
+	}
+
+	client := goytmusic.NewClient(&http.Client{}).WithAuthCookie(cookieString)
 
 	liked, err := client.Playlists.ListLiked()
 	if err != nil {
 		log.Fatalf("failed to list liked playlists: %v", err)
 	}
 
-	// for _, pl := range liked {
-	// 	fmt.Printf("Name: %s; ID: %s; ", pl.Name, pl.BrowseID)
-	// 	if pl.Author == nil {
-	// 		fmt.Printf("Author: <nil>;\n")
-	// 	} else {
-	// 		fmt.Printf("Author: %s;\n", *pl.Author)
-	// 	}
-	// }
+	m := tui.NewModel(client, liked)
+	p := tea.NewProgram(m, tea.WithAltScreen())
 
-	for _, pl := range liked {
-		pl, _ = client.Playlists.Get(&pl.BrowseID)
-
-		fmt.Printf("Playlist %s by %s (BrowseID: %s)\n", pl.Name, pl.Author.Name, pl.BrowseID)
-		fmt.Printf("[ ")
-		for i := range 5 {
-			if len(pl.Tracks) < i {
-				break
-			}
-			fmt.Printf("[ %s, %s", pl.Tracks[i].Name, pl.Tracks[i].Artists[0].Name)
-			if pl.Tracks[i].Album != nil {
-				fmt.Printf(", %s ]", pl.Tracks[i].Album.Name)
-			} else {
-				fmt.Printf(" ]")
-			}
-		}
-		fmt.Printf("]\n\n")
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("Alas, there's been an error: %v", err)
+		os.Exit(1)
 	}
 }
