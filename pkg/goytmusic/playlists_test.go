@@ -20,7 +20,7 @@ func TestListLikedPlaylistsExtraction(t *testing.T) {
 
 		client := NewClient(nil).WithAuthCookie(cookie)
 
-		req, _ := client.NewRequest("POST", "browse", client.BrowseBody(brIDLikedPlaylists))
+		req, _ := client.NewRequest("POST", "browse?prettyPrint=false", client.BrowseBody(brIDLikedPlaylists))
 		body, _, err := client.Do(req)
 		if err != nil {
 			t.Fatalf("Error while retrieving liked playlists: %v", err)
@@ -57,7 +57,7 @@ func TestGetPlaylistExtraction(t *testing.T) {
 
 		client := NewClient(nil).WithAuthCookie(cookie)
 
-		req, _ := client.NewRequest("POST", "browse", client.BrowseBody(playlistBrowseID))
+		req, _ := client.NewRequest("POST", "browse?prettyPrint=false", client.BrowseBody(playlistBrowseID))
 		body, _, err := client.Do(req)
 		if err != nil {
 			t.Fatalf("Error while retrieving playlist: %v", err)
