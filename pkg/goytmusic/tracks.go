@@ -146,8 +146,10 @@ func extractTrack(res gjson.Result) *Track {
 
 	artists := res.Get(joinPaths(pRespListItem, pFlexColumn1, pRespListItemFlexColumn, pText, pRuns))
 	artists.ForEach(func(key, value gjson.Result) bool {
-		if u := extractUser(value); u != nil {
-			tr.Artists = append(tr.Artists, u)
+		if key.Int()%2 == 0 {
+			if u := extractUser(value); u != nil {
+				tr.Artists = append(tr.Artists, u)
+			}
 		}
 		return true
 	})
