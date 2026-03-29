@@ -55,7 +55,7 @@ func main() {
 	}
 
 	if err := ytdlp.Init(cookiePath); err != nil {
-		log.Fatal("error on ytdlp initializing: %v", err)
+		log.Fatalf("error on ytdlp initializing: %v", err)
 	}
 
 	client := goytmusic.NewClient(&http.Client{}).WithAuthCookie(cookieString)
