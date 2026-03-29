@@ -87,6 +87,8 @@ func NewClient(httpClient *http.Client) *Client {
 	c.commonContext.Client.GL = "US"
 
 	c.Playlists = (*PlaylistsService)(&c.common)
+	c.Tracks = (*TracksService)(&c.common)
+
 	return c
 }
 

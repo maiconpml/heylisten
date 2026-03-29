@@ -34,6 +34,17 @@ const (
 	pFacepileStackView           = "facepile.avatarStackViewModel"
 	pRendCtxtInnertubeCommand    = "rendererContext.commandContext.onTap.innertubeCommand"
 	pContent                     = "content"
+
+	pSingleColumnNextRts               = "contents.singleColumnMusicWatchNextResultsRenderer"
+	pTabbedRenderer                    = "tabbedRenderer.watchNextTabbedResultsRenderer"
+	pMusicQueueRenderer                = "musicQueueRenderer"
+	pPlaylistPanelRenderer             = "playlistPanelRenderer"
+	pPlaylistPanelVideoWrapperRenderer = "playlistPanelVideoWrapperRenderer"
+	pPrimaryRenderer                   = "primaryRenderer"
+	pPlaylistPanelVideoRenderer        = "playlistPanelVideoRenderer"
+	pLongByLineText                    = "longBylineText"
+	pBrowseEndContextPageType          = "browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType"
+	pContinuation                      = "continuations.0.nextContinuationData.continuation"
 )
 
 // joinPaths takes multiple strings s1, s2, ..., sn and join
