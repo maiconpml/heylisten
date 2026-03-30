@@ -231,41 +231,82 @@ func (m Model) View() string {
 		return ""
 	}
 
+	w := m.width - 8
+	sideWidth := w / 4
+	centerWidth := w - (sideWidth * 2)
+
+	// the player always has 2 lines
 	var line1, line2 string
 	if m.err != nil {
-		line1 = fmt.Sprintf("Error: %v", m.err)
+		line1 = lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(fmt.Sprintf("Error: %v", m.err))
 	} else if m.status == standby || m.curTrack == -1 {
-		line1 = "▶ Not Playing - No track selected"
+		line1 = lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render("▶ Not Playing - No track selected")
 	} else if m.status == downloading {
-		line1 = fmt.Sprintf("⬇ Downloading: %s...", m.tracks[m.curTrack].Name)
+		line1 = lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render("⬇ Downloading: %s...", m.tracks[m.curTrack].Name)
 	} else {
+
+		styleLeft := lipgloss.NewStyle().Width(sideWidth).Align(lipgloss.Left)
+		styleCenter := lipgloss.NewStyle().Width(centerWidth).Align(lipgloss.Center)
+		styleRight := lipgloss.NewStyle().Width(sideWidth).Align(lipgloss.Right)
+
 		tr := m.tracks[m.curTrack]
-		artist := ""
+		artistName := ""
 		if len(tr.Artists) > 0 {
-			artist = tr.Artists[0].Name
-		}
-		status := "⏸"
-		if m.status == playing {
-			status = "▶"
+			artistName = tr.Artists[0].Name
 		}
 
-		volumeIcon := ""
-		volumePercent := audio.VolumePercent()
-		if volumePercent > 50 {
-			volumeIcon = ""
-		} else if volumePercent > 0 {
-			volumeIcon = ""
+		statusIcon := "󰒮 󰏤 󰒭"
+		if m.status == playing {
+			statusIcon = "󰒮 󰐊 󰒭"
 		}
-		line1 = fmt.Sprintf("%s %s - %s", status, tr.Name, artist)
-		line2 = fmt.Sprintf("%s %s %s %s %d%%", formatDuration(m.position), m.progress.View(), formatDuration(m.duration), volumeIcon, volumePercent)
+
+		maxBar := 40
+		barWidth := centerWidth - 22 // Espaço para "00:00 [bar] 00:00"
+		if barWidth > maxBar {
+			barWidth = maxBar
+		}
+		m.progress.Width = barWidth
+
+		songName := lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Bold(true).Render(styles.Truncate(tr.Name, sideWidth-2))
+		artist := lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(styles.Truncate(artistName, sideWidth-2))
+		icon := lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Render(statusIcon)
+		volumeStr := fmt.Sprintf("%s %d%%", m.getVolumeIcon(), audio.VolumePercent())
+
+		line1 = lipgloss.JoinHorizontal(lipgloss.Center,
+			styleLeft.Render(songName),
+			styleCenter.Render(icon),
+			styleRight.Render(volumeStr),
+		)
+
+		progressWidget := lipgloss.JoinHorizontal(lipgloss.Center,
+			lipgloss.NewStyle().MarginRight(1).Render(formatDuration(m.position)),
+			m.progress.View(),
+			lipgloss.NewStyle().MarginLeft(1).Render(formatDuration(m.duration)),
+		)
+
+		line2 = lipgloss.JoinHorizontal(lipgloss.Top,
+			styleLeft.Render(artist),
+			styleCenter.Render(progressWidget),
+			styleRight.Render(""),
+		)
+
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left,
-		line1,
-		line2,
-	)
+	return lipgloss.JoinVertical(lipgloss.Left, line1, line2)
 }
 
 func (m Model) Height() int {
 	return lipgloss.Height(m.View()) + styles.ContainerFrameHeight()
+}
+
+// getVolumeIcon returns the volume icon based on current audio.VolumePercent()
+func (m Model) getVolumeIcon() string {
+	v := audio.VolumePercent()
+	if v == 0 {
+		return ""
+	}
+	if v > 50 {
+		return ""
+	}
+	return ""
 }
