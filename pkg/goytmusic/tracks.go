@@ -22,7 +22,7 @@ type Track struct {
 // when track videoID is selected in playlist playlistID having internal ID
 // playlistSetVideoID. It also returns the continuation token to get next
 // tracks. continuation can be passed to continue a previously retrieved queue
-func (s *TracksService) NextTracksByMusicInPlaylist(videoID, playlistSetVideoID, playlistID, continuation string) ([]*Track, string, error) {
+func (s *TracksService) NextTracksByMusicInPlaylist(videoID, playlistSetVideoID, playlistID, continuation *string) ([]*Track, string, error) {
 	if s.client.isGuest {
 		return nil, "", errors.New("Client is not authenticated")
 	}
@@ -32,7 +32,7 @@ func (s *TracksService) NextTracksByMusicInPlaylist(videoID, playlistSetVideoID,
 		PlaylistID         string  `json:"playlistId"`
 		Continuation       string  `json:"continuation"`
 		Context            Context `json:"context"`
-	}{videoID, playlistSetVideoID, playlistID, continuation, s.client.commonContext}
+	}{*videoID, *playlistSetVideoID, *playlistID, *continuation, s.client.commonContext}
 
 	return s.nextTracks(body)
 }
@@ -41,7 +41,7 @@ func (s *TracksService) NextTracksByMusicInPlaylist(videoID, playlistSetVideoID,
 // playlistID is selected. It also returns the continuation token to get next
 // tracks Additional request parameters can be passed in params continuation
 // can be passed to continue a previously retrieved queue.
-func (s *TracksService) NextTracksByPlaylist(playlistID, continuation string, random bool) ([]*Track, string, error) {
+func (s *TracksService) NextTracksByPlaylist(playlistID, continuation *string, random bool) ([]*Track, string, error) {
 	if s.client.isGuest {
 		return nil, "", errors.New("Client is not authenticated")
 	}
@@ -54,7 +54,7 @@ func (s *TracksService) NextTracksByPlaylist(playlistID, continuation string, ra
 		Continuation string  `json:"continuation"`
 		Params       string  `json:"params"`
 		Context      Context `json:"context"`
-	}{playlistID, continuation, params, s.client.commonContext}
+	}{*playlistID, *continuation, params, s.client.commonContext}
 
 	return s.nextTracks(body)
 }
