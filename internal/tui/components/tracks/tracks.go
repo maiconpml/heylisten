@@ -8,8 +8,8 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/maiconpml/yt-music-tui/internal/tui/styles"
-	"github.com/maiconpml/yt-music-tui/pkg/goytmusic"
+	"github.com/maiconpml/heylisten/internal/tui/styles"
+	"github.com/maiconpml/heylisten/pkg/goytmusic"
 )
 
 type TrackSelectedMsg struct {

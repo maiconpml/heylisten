@@ -3,11 +3,11 @@ package tui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/maiconpml/yt-music-tui/internal/tui/components/player"
-	"github.com/maiconpml/yt-music-tui/internal/tui/components/playlists"
-	"github.com/maiconpml/yt-music-tui/internal/tui/components/tracks"
-	"github.com/maiconpml/yt-music-tui/internal/tui/styles"
-	"github.com/maiconpml/yt-music-tui/pkg/goytmusic"
+	"github.com/maiconpml/heylisten/internal/tui/components/player"
+	"github.com/maiconpml/heylisten/internal/tui/components/playlists"
+	"github.com/maiconpml/heylisten/internal/tui/components/tracks"
+	"github.com/maiconpml/heylisten/internal/tui/styles"
+	"github.com/maiconpml/heylisten/pkg/goytmusic"
 )
 
 type viewState int

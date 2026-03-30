@@ -1,4 +1,4 @@
-module github.com/maiconpml/yt-music-tui
+module github.com/maiconpml/heylisten
 
 go 1.25.7
 

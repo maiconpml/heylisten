@@ -8,10 +8,10 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/maiconpml/yt-music-tui/internal/audio"
-	"github.com/maiconpml/yt-music-tui/internal/tui/styles"
-	"github.com/maiconpml/yt-music-tui/internal/ytdlp"
-	"github.com/maiconpml/yt-music-tui/pkg/goytmusic"
+	"github.com/maiconpml/heylisten/internal/audio"
+	"github.com/maiconpml/heylisten/internal/tui/styles"
+	"github.com/maiconpml/heylisten/internal/ytdlp"
+	"github.com/maiconpml/heylisten/pkg/goytmusic"
 )
 
 type TickMsg time.Time

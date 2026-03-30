@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/maiconpml/yt-music-tui/internal/audio"
-	"github.com/maiconpml/yt-music-tui/internal/config"
-	"github.com/maiconpml/yt-music-tui/internal/logger"
-	"github.com/maiconpml/yt-music-tui/internal/tui"
-	"github.com/maiconpml/yt-music-tui/internal/ytdlp"
-	"github.com/maiconpml/yt-music-tui/pkg/goytmusic"
+	"github.com/maiconpml/heylisten/internal/audio"
+	"github.com/maiconpml/heylisten/internal/config"
+	"github.com/maiconpml/heylisten/internal/logger"
+	"github.com/maiconpml/heylisten/internal/tui"
+	"github.com/maiconpml/heylisten/internal/ytdlp"
+	"github.com/maiconpml/heylisten/pkg/goytmusic"
 )
 
 func main() {
