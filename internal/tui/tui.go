@@ -64,6 +64,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case " ":
 			return m, func() tea.Msg { return player.TogglePauseMsg{} }
+		case "n":
+			return m, func() tea.Msg { return player.NextTrackMsg{} }
+		case "N":
+			return m, func() tea.Msg { return player.PrevTrackMsg{} }
 		}
 
 	case tea.WindowSizeMsg:
@@ -100,6 +104,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case TracksLoadedMsg:
 		m.tracks.SetTracks(msg.Playlist.Tracks, msg.Playlist.Name)
 		return m, nil
+	case tracks.TrackSelectedMsg:
+		return m, func() tea.Msg {
+			cont := ""
+			tracks, contin, err := m.client.Tracks.NextTracksByMusicInPlaylist(msg.Track.VideoID, msg.Track.PlaylistSetVideoID, msg.Track.PlaylistID, Ptr(cont))
+			if err != nil {
+				return ErrorMsg{Err: err}
+			}
+			return player.QueueLoadedMsg{Tracks: tracks, CurTrack: msg.Index, Continuation: contin}
+		}
 	}
 
 	// Forward messages to active components
@@ -138,4 +151,9 @@ func (m Model) View() string {
 	)
 
 	return lipgloss.NewStyle().Padding(1, 2).Render(ui)
+}
+
+// Ptr returns a pointer to value v
+func Ptr[T any](v T) *T {
+	return &v
 }

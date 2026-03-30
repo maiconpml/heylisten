@@ -14,6 +14,7 @@ import (
 
 type TrackSelectedMsg struct {
 	Track *goytmusic.Track
+	Index int
 }
 
 type item struct {
@@ -135,9 +136,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
+			index := m.list.Index()
 			if i, ok := m.list.SelectedItem().(item); ok {
 				return m, func() tea.Msg {
-					return TrackSelectedMsg{Track: i.track}
+					return TrackSelectedMsg{Track: i.track, Index: index}
 				}
 			}
 		}
