@@ -248,8 +248,16 @@ func (m Model) View() string {
 		if m.status == playing {
 			status = "▶"
 		}
+
+		volumeIcon := ""
+		volumePercent := audio.VolumePercent()
+		if volumePercent > 50 {
+			volumeIcon = ""
+		} else if volumePercent > 0 {
+			volumeIcon = ""
+		}
 		line1 = fmt.Sprintf("%s %s - %s", status, tr.Name, artist)
-		line2 = fmt.Sprintf("%s %s %s", formatDuration(m.position), m.progress.View(), formatDuration(m.duration))
+		line2 = fmt.Sprintf("%s %s %s %s %d%%", formatDuration(m.position), m.progress.View(), formatDuration(m.duration), volumeIcon, volumePercent)
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,

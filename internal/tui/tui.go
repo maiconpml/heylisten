@@ -3,6 +3,7 @@ package tui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/maiconpml/heylisten/internal/audio"
 	"github.com/maiconpml/heylisten/internal/tui/components/player"
 	"github.com/maiconpml/heylisten/internal/tui/components/playlists"
 	"github.com/maiconpml/heylisten/internal/tui/components/tracks"
@@ -68,6 +69,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return player.NextTrackMsg{} }
 		case "N":
 			return m, func() tea.Msg { return player.PrevTrackMsg{} }
+		case "+":
+			audio.IncrVolume()
+		case "-":
+			audio.DecrVolume()
 		}
 
 	case tea.WindowSizeMsg:
