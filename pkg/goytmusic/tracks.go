@@ -9,11 +9,13 @@ import (
 type TracksService service
 
 type Track struct {
-	Name     string
-	Artists  []*User
-	VideoID  *string
-	Duration string
-	Album    *Album
+	Name               string
+	Artists            []*User
+	VideoID            *string
+	PlaylistID         *string
+	PlaylistSetVideoID *string
+	Duration           string
+	Album              *Album
 }
 
 // NextTracksByMusicInPlaylist returns the list of next tracks to be played
@@ -107,7 +109,7 @@ func extractTrackFromQueue(res gjson.Result) *Track {
 	}
 
 	tr.Name = resTr.Get(joinPaths(pTitle, pRun, pText)).String()
-	buf := resTr.Get(joinPaths(pNavEndpoint, pWatchEndID))
+	buf := resTr.Get(joinPaths(pNavEndpoint, pWatchEnd, pVideoID))
 	if buf.Exists() {
 		tr.VideoID = Ptr(buf.String())
 	}
@@ -137,11 +139,12 @@ func extractTrackFromQueue(res gjson.Result) *Track {
 func extractTrack(res gjson.Result) *Track {
 	tr := &Track{}
 
-	name := res.Get(joinPaths(pRespListItem, pFlexColumn0, pRespListItemFlexColumn, pText, pRun))
-	tr.Name = name.Get(joinPaths(pText)).String()
-	buf := name.Get(joinPaths(pNavEndpoint, pWatchEndID))
+	tr.Name = res.Get(joinPaths(pRespListItem, pFlexColumn0, pRespListItemFlexColumn, pText, pRun, pText)).String()
+	buf := res.Get(joinPaths(pRespListItem, pOverlayRenderer, pContent, pMusicPlayButtonRenderer, pPlayNavEndpoint, pWatchEnd))
 	if buf.Exists() {
-		tr.VideoID = Ptr(buf.String())
+		tr.VideoID = Ptr(buf.Get(pVideoID).String())
+		tr.PlaylistID = Ptr(buf.Get(pPlaylistID).String())
+		tr.PlaylistSetVideoID = Ptr(buf.Get(pPlaylistSetVideoID).String())
 	}
 
 	artists := res.Get(joinPaths(pRespListItem, pFlexColumn1, pRespListItemFlexColumn, pText, pRuns))
