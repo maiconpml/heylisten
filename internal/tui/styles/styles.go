@@ -19,6 +19,11 @@ var (
 
 	NameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
 	DimStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+
+	ModalStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(BorderColor).
+			Padding(1, 4)
 )
 
 func ContainerFrameWidth() int {
