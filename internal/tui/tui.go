@@ -9,6 +9,7 @@ import (
 	"github.com/maiconpml/heylisten/internal/tui/components/player"
 	"github.com/maiconpml/heylisten/internal/tui/components/playlists"
 	"github.com/maiconpml/heylisten/internal/tui/components/tracks"
+	"github.com/maiconpml/heylisten/internal/tui/keys"
 	"github.com/maiconpml/heylisten/internal/tui/styles"
 	"github.com/maiconpml/heylisten/pkg/goytmusic"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
@@ -36,7 +37,7 @@ type Model struct {
 	tracks    tracks.Model
 	player    player.Model
 	help      help.Model
-	keys      KeyMap
+	keys      keys.KeyMap
 	width     int
 	height    int
 }
@@ -49,7 +50,7 @@ func NewModel(client *goytmusic.Client, playlistsData []*goytmusic.Playlist) Mod
 		tracks:    tracks.New(),
 		player:    player.New(),
 		help:      help.New(),
-		keys:      DefaultKeyMap,
+		keys:      keys.Keys,
 	}
 }
 

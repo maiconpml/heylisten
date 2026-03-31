@@ -1,4 +1,4 @@
-package tui
+package keys
 
 import "github.com/charmbracelet/bubbles/key"
 
@@ -31,7 +31,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-var DefaultKeyMap = KeyMap{
+var Keys = KeyMap{
 	Up: key.NewBinding(
 		key.WithKeys("up", "k"),
 		key.WithHelp("↑/k", "up"),
