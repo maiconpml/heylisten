@@ -3,51 +3,52 @@ package keys
 import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
-	Up        key.Binding
-	Down      key.Binding
-	Select    key.Binding
-	Back      key.Binding
-	PlayPause key.Binding
-	NextTrack key.Binding
-	PrevTrack key.Binding
-	VolUp     key.Binding
-	VolDown   key.Binding
-	Help      key.Binding
-	Quit      key.Binding
+	PlayPause  key.Binding
+	NextTrack  key.Binding
+	PrevTrack  key.Binding
+	NextTab    key.Binding
+	TabHome    key.Binding
+	TabLibrary key.Binding
+	TabSearch  key.Binding
+	PrevTab    key.Binding
+	VolUp      key.Binding
+	VolDown    key.Binding
+	Help       key.Binding
+	Quit       key.Binding
+	Back       key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view.
 // Ordered by importance, ending with the toggle help command.
 func (k KeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Select, k.PlayPause, k.NextTrack, k.Back, k.Quit, k.Help}
+	return []key.Binding{k.PlayPause, k.NextTrack, k.Quit, k.Help}
 }
 
 // FullHelp returns keybindings for the expanded help view.
 func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down, k.Select, k.Back},
+		{k.NextTab, k.PrevTab, k.Back},
 		{k.PlayPause, k.NextTrack, k.PrevTrack, k.VolUp, k.VolDown},
 		{k.Help, k.Quit},
 	}
 }
 
 var Keys = KeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "up"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "down"),
-	),
-	Select: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("enter", "select"),
-	),
-	Back: key.NewBinding(
-		key.WithKeys("esc", "backspace"),
-		key.WithHelp("esc", "back"),
-	),
+	TabHome: key.NewBinding(
+		key.WithKeys("1"),
+		key.WithHelp("1", "go to home")),
+	TabLibrary: key.NewBinding(
+		key.WithKeys("2"),
+		key.WithHelp("2", "go to library")),
+	TabSearch: key.NewBinding(
+		key.WithKeys("3"),
+		key.WithHelp("3", "go to search")),
+	NextTab: key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "next tab")),
+	PrevTab: key.NewBinding(
+		key.WithKeys("shift+tab"),
+		key.WithHelp("shift+tab", "prev tab")),
 	PlayPause: key.NewBinding(
 		key.WithKeys(" "),
 		key.WithHelp("space", "play/pause"),
@@ -71,6 +72,10 @@ var Keys = KeyMap{
 	Help: key.NewBinding(
 		key.WithKeys("?"),
 		key.WithHelp("?", "more"),
+	),
+	Back: key.NewBinding(
+		key.WithKeys("esc", "backspace"),
+		key.WithHelp("esc", "back"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),

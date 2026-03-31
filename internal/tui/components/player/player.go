@@ -231,7 +231,8 @@ func (m Model) View() string {
 		return ""
 	}
 
-	w := m.width - 8
+	fw := styles.ContainerFrameWidth()
+	w := m.width - fw
 	sideWidth := w / 4
 	centerWidth := w - (sideWidth * 2)
 

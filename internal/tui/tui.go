@@ -6,8 +6,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/maiconpml/heylisten/internal/audio"
+	"github.com/maiconpml/heylisten/internal/tui/components/library"
 	"github.com/maiconpml/heylisten/internal/tui/components/player"
-	"github.com/maiconpml/heylisten/internal/tui/components/playlists"
 	"github.com/maiconpml/heylisten/internal/tui/components/tracks"
 	"github.com/maiconpml/heylisten/internal/tui/keys"
 	"github.com/maiconpml/heylisten/internal/tui/styles"
@@ -15,68 +15,64 @@ import (
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
-type viewState int
+type tab int
 
 const (
-	viewPlaylists viewState = iota
-	viewTracks
+	tabHome tab = iota
+	tabLibrary
+	tabSearch // TODO:coming soon
 )
-
-type TracksLoadedMsg struct {
-	Playlist *goytmusic.Playlist
-}
 
 type ErrorMsg struct {
 	Err error
 }
 
 type Model struct {
-	client    *goytmusic.Client
-	state     viewState
-	playlists playlists.Model
-	tracks    tracks.Model
-	player    player.Model
-	help      help.Model
-	keys      keys.KeyMap
-	width     int
-	height    int
+	client     *goytmusic.Client
+	tab        tab
+	tabLibrary library.Model
+	player     player.Model
+	help       help.Model
+	keys       keys.KeyMap
+	width      int
+	height     int
 }
 
 func NewModel(client *goytmusic.Client, playlistsData []*goytmusic.Playlist) Model {
 	return Model{
-		client:    client,
-		state:     viewPlaylists,
-		playlists: playlists.New(playlistsData),
-		tracks:    tracks.New(),
-		player:    player.New(),
-		help:      help.New(),
-		keys:      keys.Keys,
+		client:     client,
+		tabLibrary: library.New(client, playlistsData),
+		tab:        tabLibrary,
+		player:     player.New(),
+		help:       help.New(),
+		keys:       keys.Keys,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.playlists.Init(), m.tracks.Init(), m.player.Init())
+	return tea.Batch(m.player.Init())
 }
 
 func (m *Model) updateSizes() {
 	if m.width == 0 || m.height == 0 {
 		return
 	}
-	availWidth := m.width - 4
-	availHeight := m.height - 2
 
-	m.help.ShowAll = false
-	footerHeight := lipgloss.Height(m.help.View(m.keys))
+	paddingH := 4
+	availWidth := m.width - paddingH
 
+	tabsHeight := 1
 	playerHeight := m.player.Height()
 
-	listHeight := availHeight - playerHeight - footerHeight
-	if listHeight < 0 {
-		listHeight = 0
+	footerHeight := lipgloss.Height(m.help.View(m.keys))
+
+	availHeight := m.height - 2 - tabsHeight - playerHeight - footerHeight
+
+	if availHeight < 0 {
+		availHeight = 0
 	}
 
-	m.playlists.SetSize(availWidth, listHeight)
-	m.tracks.SetSize(availWidth, listHeight)
+	m.tabLibrary.SetSize(availWidth, availHeight)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -98,11 +94,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
-		case key.Matches(msg, m.keys.Back):
-			if m.state == viewTracks {
-				m.state = viewPlaylists
-				return m, nil
+		case key.Matches(msg, m.keys.NextTab):
+			m.tab = (m.tab + 1) % 3
+		case key.Matches(msg, m.keys.PrevTab):
+			m.tab--
+			if m.tab < 0 {
+				m.tab = 2
 			}
+		case key.Matches(msg, m.keys.TabHome):
+			m.tab = 0
+		case key.Matches(msg, m.keys.TabLibrary):
+			m.tab = 1
+		case key.Matches(msg, m.keys.TabSearch):
+			m.tab = 2
 		case key.Matches(msg, m.keys.PlayPause):
 			return m, func() tea.Msg { return player.TogglePauseMsg{} }
 		case key.Matches(msg, m.keys.NextTrack):
@@ -136,21 +140,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateSizes()
 		return m, tea.Batch(cmds...)
 
-	case playlists.PlaylistSelectedMsg:
-		m.state = viewTracks
-
-		id := msg.PlaylistID
-		return m, func() tea.Msg {
-			pl, err := m.client.Playlists.Get(&id)
-			if err != nil {
-				return ErrorMsg{Err: err}
-			}
-			return TracksLoadedMsg{Playlist: pl}
-		}
-
-	case TracksLoadedMsg:
-		m.tracks.SetTracks(msg.Playlist.Tracks, msg.Playlist.Name)
-		return m, nil
 	case tracks.TrackSelectedMsg:
 		return m, func() tea.Msg {
 			cont := ""
@@ -165,12 +154,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Forward messages to active components
 	var cmd tea.Cmd
 
-	switch m.state {
-	case viewPlaylists:
-		m.playlists, cmd = m.playlists.Update(msg)
-		cmds = append(cmds, cmd)
-	case viewTracks:
-		m.tracks, cmd = m.tracks.Update(msg)
+	switch m.tab {
+	case tabLibrary:
+		m.tabLibrary, cmd = m.tabLibrary.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -185,11 +171,35 @@ func (m Model) View() string {
 
 	isHelpOpen := m.help.ShowAll
 
+	tabsW := availWidth / 10
+	if tabsW < 14 {
+		tabsW = 14
+	}
+
+	tabStyle := lipgloss.NewStyle().Width(tabsW).Align(lipgloss.Center)
+	selectedTabStyle := lipgloss.NewStyle().Width(tabsW).Align(lipgloss.Center).Background(lipgloss.Color("240"))
+	homeTab := tabStyle.Render("[1]Home")
+	libTab := tabStyle.Render("[2]Library")
+	searchTab := tabStyle.Render("[3]Search")
+
+	switch m.tab {
+	case tabHome:
+		homeTab = selectedTabStyle.Render("[1]Home")
+	case tabLibrary:
+		libTab = selectedTabStyle.Render("[2]Library")
+	case tabSearch:
+		searchTab = selectedTabStyle.Render("[3]Search")
+	}
+
+	tabsView := lipgloss.JoinHorizontal(lipgloss.Left,
+		homeTab,
+		libTab,
+		searchTab,
+	)
+
 	var activeView string
-	if m.state == viewPlaylists {
-		activeView = styles.RenderContainer("Minhas Playlists", availWidth, m.playlists.View())
-	} else {
-		activeView = styles.RenderContainer(m.tracks.Title(), availWidth, m.tracks.View())
+	if m.tab == tabLibrary {
+		activeView = m.tabLibrary.View()
 	}
 
 	playerView := styles.RenderContainer("Player", availWidth, m.player.View())
@@ -200,12 +210,13 @@ func (m Model) View() string {
 	m.help.ShowAll = isHelpOpen
 
 	ui := lipgloss.JoinVertical(lipgloss.Left,
+		tabsView,
 		activeView,
 		playerView,
 		footerHelp,
 	)
 
-	background := lipgloss.NewStyle().Padding(1, 2).Render(ui)
+	background := lipgloss.NewStyle().Padding(0, 2).Render(ui)
 
 	if isHelpOpen {
 		helpContent := m.help.View(m.keys)
