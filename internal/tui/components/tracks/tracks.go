@@ -161,6 +161,5 @@ func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	fw := styles.ContainerFrameWidth()
-	fh := styles.ContainerFrameHeight()
-	m.list.SetSize(width-fw, height-fh)
+	m.list.SetSize(width-fw, height-2)
 }

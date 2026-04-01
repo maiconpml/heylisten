@@ -114,8 +114,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m *Model) SetSize(w, h int) {
 	m.width, m.height = w, h
 	fw := styles.ContainerFrameWidth()
-	fh := styles.ContainerFrameHeight()
-	m.list.SetSize(w-fw, h-fh)
+	m.list.SetSize(w-fw, h-2)
 }
 
 func (m Model) View() string {

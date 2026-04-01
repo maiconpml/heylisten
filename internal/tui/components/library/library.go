@@ -93,8 +93,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
-	m.playlists.SetSize(width-2, height-2)
-	m.tracks.SetSize(width-2, height-2)
+	m.playlists.SetSize(width-2, height)
+	m.tracks.SetSize(width-2, height)
 }
 
 func (m Model) View() string {
