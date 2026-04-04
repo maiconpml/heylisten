@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/maiconpml/heylisten/internal/audio"
+	"github.com/maiconpml/heylisten/internal/tui/components/home"
 	"github.com/maiconpml/heylisten/internal/tui/components/library"
 	"github.com/maiconpml/heylisten/internal/tui/components/player"
 	"github.com/maiconpml/heylisten/internal/tui/components/tracks"
@@ -31,6 +32,7 @@ type Model struct {
 	client     *goytmusic.Client
 	tab        tab
 	tabLibrary library.Model
+	tabHome    home.Model
 	player     player.Model
 	help       help.Model
 	keys       keys.KeyMap
@@ -42,7 +44,8 @@ func NewModel(client *goytmusic.Client, playlistsData []*goytmusic.Playlist) Mod
 	return Model{
 		client:     client,
 		tabLibrary: library.New(client, playlistsData),
-		tab:        tabLibrary,
+		tabHome:    home.New(),
+		tab:        tabHome,
 		player:     player.New(),
 		help:       help.New(),
 		keys:       keys.Keys,
@@ -73,6 +76,7 @@ func (m *Model) updateSizes() {
 	}
 
 	m.tabLibrary.SetSize(availWidth, availHeight)
+	m.tabHome.SetSize(availWidth, availHeight)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -182,11 +186,14 @@ func (m Model) View() string {
 	libTab := tabStyle.Render("[2]Library")
 	searchTab := tabStyle.Render("[3]Search")
 
+	var activeView string
 	switch m.tab {
 	case tabHome:
 		homeTab = selectedTabStyle.Render("[1]Home")
+		activeView = m.tabHome.View()
 	case tabLibrary:
 		libTab = selectedTabStyle.Render("[2]Library")
+		activeView = m.tabLibrary.View()
 	case tabSearch:
 		searchTab = selectedTabStyle.Render("[3]Search")
 	}
@@ -196,11 +203,6 @@ func (m Model) View() string {
 		libTab,
 		searchTab,
 	)
-
-	var activeView string
-	if m.tab == tabLibrary {
-		activeView = m.tabLibrary.View()
-	}
 
 	playerView := styles.RenderContainer("Player", availWidth, m.player.View())
 
