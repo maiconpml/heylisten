@@ -71,6 +71,7 @@ func main() {
 		slog.Error("Error on ytdlp initializing", "err", err)
 		os.Exit(1)
 	}
+	defer ytdlp.CleanCache()
 
 	client := goytmusic.NewClient(&http.Client{}).WithAuthCookie(cookieString)
 

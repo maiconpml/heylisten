@@ -8,13 +8,48 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
 var (
 	activeCookiePath string
 	activeCacheDir   string
+	cacheQueue       []string
+	cacheMutex       sync.Mutex
+	maxCacheSize     = 10
 )
+
+func registerCache(videoID string) {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	for i, id := range cacheQueue {
+		if id == videoID {
+			cacheQueue = append(cacheQueue[:i], cacheQueue[i+1:]...)
+			break
+		}
+	}
+
+	cacheQueue = append(cacheQueue, videoID)
+
+	for len(cacheQueue) > maxCacheSize {
+		oldest := cacheQueue[0]
+		cacheQueue = cacheQueue[1:]
+		err := os.Remove(filepath.Join(activeCacheDir, oldest+".mp3"))
+		if err != nil && !os.IsNotExist(err) {
+			slog.Error("Erro ao remover cache antigo", "videoID", oldest, "err", err)
+		} else {
+			slog.Info("Cache antigo removido", "videoID", oldest)
+		}
+	}
+}
+
+func CleanCache() {
+	if activeCacheDir != "" {
+		os.RemoveAll(activeCacheDir)
+	}
+}
 
 func Init(cookiePath string) error {
 	activeCookiePath = cookiePath
@@ -36,6 +71,7 @@ func Init(cookiePath string) error {
 func GetAudioPath(videoID string) (string, error) {
 	path := filepath.Join(activeCacheDir, videoID+".mp3")
 	if _, err := os.Stat(path); err == nil {
+		registerCache(videoID)
 		return path, nil
 	}
 
@@ -53,6 +89,7 @@ func GetAudioPath(videoID string) (string, error) {
 	}
 
 	slog.Info("Download concluído (cache)", "videoID", videoID)
+	registerCache(videoID)
 	return path, nil
 }
 
@@ -60,6 +97,7 @@ func StreamAudio(videoID string) (io.Reader, error) {
 	path := filepath.Join(activeCacheDir, videoID+".mp3")
 	if _, err := os.Stat(path); err == nil {
 		slog.Info("Usando arquivo de cache existente", "videoID", videoID)
+		registerCache(videoID)
 		return os.Open(path)
 	}
 
@@ -98,6 +136,8 @@ func StreamAudio(videoID string) (io.Reader, error) {
 		file.Close()
 		return nil, err
 	}
+
+	registerCache(videoID)
 
 	done := make(chan struct{})
 	go func() {
