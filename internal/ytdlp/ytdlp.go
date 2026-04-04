@@ -1,10 +1,14 @@
 package ytdlp
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 var (
@@ -37,7 +41,7 @@ func GetAudioPath(videoID string) (string, error) {
 
 	url := fmt.Sprintf("https://music.youtube.com/watch?v=%s", videoID)
 	// -x: extract audio, --audio-format mp3: convert to mp3, --audio-quality 0: best quality
-	args := []string{"-x", "--audio-format", "mp3", "--audio-quality", "0", "--output", path}
+	args := []string{"-x", "--audio-format", "mp3", "--audio-quality", "0", "--output", path, "--postprocessor-args", "ffmpeg:-ar 44100"}
 	if activeCookiePath != "" {
 		args = append(args, "--cookies", activeCookiePath)
 	}
@@ -48,7 +52,107 @@ func GetAudioPath(videoID string) (string, error) {
 		return "", fmt.Errorf("yt-dlp failed: %v, output: %s", err, string(output))
 	}
 
+	slog.Info("Download concluído (cache)", "videoID", videoID)
 	return path, nil
+}
+
+func StreamAudio(videoID string) (io.Reader, error) {
+	path := filepath.Join(activeCacheDir, videoID+".mp3")
+	if _, err := os.Stat(path); err == nil {
+		slog.Info("Usando arquivo de cache existente", "videoID", videoID)
+		return os.Open(path)
+	}
+
+	url := fmt.Sprintf("https://music.youtube.com/watch?v=%s", videoID)
+
+	ytCmd := exec.Command("yt-dlp", "-q", "--no-progress", "-o", "-", "-f", "ba", url)
+	if activeCookiePath != "" {
+		ytCmd.Args = append(ytCmd.Args, "--cookies", activeCookiePath)
+	}
+
+	ffCmd := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "mp3", "-ar", "44100", "-map_metadata", "-1", "-id3v2_version", "0", "-")
+
+	ytOut, err := ytCmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	ffCmd.Stdin = ytOut
+
+	var ffStderr bytes.Buffer
+	ffCmd.Stderr = &ffStderr
+	ffOut, err := ffCmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ytCmd.Start(); err != nil {
+		file.Close()
+		return nil, err
+	}
+	if err := ffCmd.Start(); err != nil {
+		file.Close()
+		return nil, err
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer file.Close()
+		defer close(done)
+
+		_, copyErr := io.Copy(file, ffOut)
+
+		_ = ytCmd.Wait()
+		_ = ffCmd.Wait()
+
+		if copyErr == nil {
+			slog.Info("Download e conversão concluídos (cache pronto)", "videoID", videoID)
+		} else {
+			slog.Error("Erro durante cache assíncrono", "error", copyErr)
+		}
+	}()
+
+	readHandle, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &followReader{
+		file: readHandle,
+		done: done,
+	}, nil
+}
+
+type followReader struct {
+	file *os.File
+	done chan struct{}
+}
+
+func (f *followReader) Read(p []byte) (n int, err error) {
+	for {
+		n, err = f.file.Read(p)
+		if n > 0 {
+			return n, nil
+		}
+		if err == io.EOF {
+			select {
+			case <-f.done:
+				return 0, io.EOF
+			default:
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+		}
+		return n, err
+	}
+}
+
+func (f *followReader) Close() error {
+	return f.file.Close()
 }
 
 // CheckDependencies checks if yt-dlp and ffmpeg are installed.

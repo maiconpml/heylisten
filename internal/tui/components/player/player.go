@@ -2,7 +2,10 @@ package player
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -17,11 +20,6 @@ import (
 type TickMsg time.Time
 
 type TogglePauseMsg struct{}
-
-type DownloadCompleteMsg struct {
-	Path string
-	Err  error
-}
 
 func tickCmd() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
@@ -38,6 +36,11 @@ type QueueLoadedMsg struct {
 type PrefetchCompleteMsg struct {
 	Index int
 	Err   error
+}
+
+type StreamReadyMsg struct {
+	Data io.Reader
+	Err  error
 }
 
 type (
@@ -86,6 +89,26 @@ func formatDuration(seconds float64) string {
 	return fmt.Sprintf("%02d:%02d", mins, secs)
 }
 
+func parseDuration(durStr string) float64 {
+	if durStr == "" {
+		return 0
+	}
+	parts := strings.Split(durStr, ":")
+	var totalSeconds float64
+	for i, part := range parts {
+		val, _ := strconv.Atoi(part)
+		multiplier := 1.0
+		power := len(parts) - 1 - i
+		if power == 1 {
+			multiplier = 60
+		} else if power == 2 {
+			multiplier = 3600
+		}
+		totalSeconds += float64(val) * multiplier
+	}
+	return totalSeconds
+}
+
 func (m *Model) prefetchTrack(index int) tea.Cmd {
 	if index <= 0 || index > len(m.tracks) {
 		return nil
@@ -113,10 +136,11 @@ func (m *Model) playTrack(index int) tea.Cmd {
 	m.curTrack = index
 	m.status = downloading
 	m.position = 0
-	m.duration = 0
 	m.err = nil
 
 	tr := m.tracks[m.curTrack]
+	m.duration = parseDuration(tr.Duration)
+
 	if tr.VideoID == nil {
 		m.err = fmt.Errorf("track without videoID")
 		m.status = standby
@@ -125,13 +149,14 @@ func (m *Model) playTrack(index int) tea.Cmd {
 
 	videoID := *tr.VideoID
 	return func() tea.Msg {
-		slog.Info("downloading track", "name", tr.Name)
-		path, err := ytdlp.GetAudioPath(videoID)
+		slog.Info("configuring stream for track", "name", tr.Name)
+		data, err := ytdlp.StreamAudio(videoID)
 		if err != nil {
-			slog.Error("error downloading track", "error", err.Error())
+			slog.Error("error configuring stream for track", "error", err.Error())
+			return StreamReadyMsg{Data: data, Err: err}
 		}
-		slog.Info("track downloaded sucessfully")
-		return DownloadCompleteMsg{Path: path, Err: err}
+		slog.Info("stream configured sucessfully")
+		return StreamReadyMsg{Data: data, Err: err}
 	}
 }
 
@@ -150,21 +175,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case TickMsg:
 		cmds = append(cmds, tickCmd())
 		if m.status == playing || m.status == paused {
-			pos, dur, pausd, err := audio.GetProgress()
+			pos, dur, pausd, finished, err := audio.GetProgress()
 			if err == nil {
 				m.position = pos
-				m.duration = dur
+				if dur > 0 {
+					m.duration = dur
+				}
+
 				if pausd {
 					m.status = paused
 				} else {
 					m.status = playing
 				}
 
-				if dur > 0 {
-					cmd := m.progress.SetPercent(pos / dur)
+				if m.duration > 0 {
+					cmd := m.progress.SetPercent(pos / m.duration)
 					cmds = append(cmds, cmd)
 
-					if pos >= dur {
+					if finished || (m.duration > 0 && pos >= m.duration-1) {
 						cmds = append(cmds, func() tea.Msg { return NextTrackMsg{} })
 						return m, tea.Batch(cmds...)
 					}
@@ -201,19 +229,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		cmds = append(cmds, m.playTrack(msg.CurTrack))
 
-	case DownloadCompleteMsg:
+	case StreamReadyMsg:
 		if msg.Err == nil {
-			if err := audio.Play(msg.Path); err == nil {
+			if err := audio.PlayStream(msg.Data); err == nil {
 				m.status = playing
 				cmds = append(cmds, m.prefetchTrack(m.curTrack+1))
 			} else {
+				slog.Info("Error on streaming")
 				m.status = standby
 				m.err = err
 			}
-		} else {
-			m.err = msg.Err
-			m.status = standby
 		}
+
 	case PrefetchCompleteMsg:
 		if msg.Err == nil {
 			if msg.Index < m.curTrack+2 {

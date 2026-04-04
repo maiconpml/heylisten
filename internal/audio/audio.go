@@ -2,7 +2,8 @@ package audio
 
 import (
 	"fmt"
-	"os"
+	"io"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ var (
 	streamer    beep.StreamSeekCloser
 	initialized bool
 	volumeCtrl  *effects.Volume
+	streamerSR  beep.SampleRate
 )
 
 // Init initializes the audio speaker.
@@ -36,35 +38,40 @@ func Init() error {
 	return err
 }
 
-// Play plays the audio file at the given path.
-func Play(path string) error {
-	mu.Lock()
-	defer mu.Unlock()
-
-	f, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
-	}
-
-	s, format, err := mp3.Decode(f)
-	if err != nil {
-		f.Close()
-		return fmt.Errorf("failed to decode mp3: %v", err)
-	}
-
+func play(s beep.StreamSeekCloser, f beep.Format) error {
 	speaker.Clear()
 	if streamer != nil {
 		streamer.Close()
 	}
 
-	resampled := beep.Resample(4, format.SampleRate, sampleRate, s)
+	resampled := beep.Resample(4, f.SampleRate, sampleRate, s)
 
 	ctrl = &beep.Ctrl{Streamer: resampled, Paused: false}
 	volumeCtrl = &effects.Volume{Streamer: ctrl, Base: 2, Volume: volumeCtrl.Volume}
 	streamer = s
+	streamerSR = f.SampleRate
 
 	speaker.Play(volumeCtrl)
 	return nil
+}
+
+func PlayStream(r io.Reader) error {
+	slog.Info("Iniciando decodificação do stream MP3...")
+
+	var rc io.ReadCloser
+	if c, ok := r.(io.ReadCloser); ok {
+		rc = c
+	} else {
+		rc = io.NopCloser(r)
+	}
+
+	s, format, err := mp3.Decode(rc)
+	if err != nil {
+		return fmt.Errorf("erro ao decodificar stream: %v", err)
+	}
+
+	slog.Info("Áudio pronto, iniciando reprodução", "sampleRate", format.SampleRate)
+	return play(s, format)
 }
 
 // TogglePause toggles the playback between paused and playing states.
@@ -113,13 +120,13 @@ func DecrVolume() {
 	}
 }
 
-// GetProgress returns the current position, duration and paused state of the playback.
-func GetProgress() (position float64, duration float64, paused bool, err error) {
+// GetProgress returns the current position, duration, paused state and if it finished.
+func GetProgress() (position float64, duration float64, paused bool, finished bool, err error) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if streamer == nil || ctrl == nil {
-		return 0, 0, false, fmt.Errorf("no track playing")
+		return 0, 0, false, false, fmt.Errorf("no track playing")
 	}
 
 	speaker.Lock()
@@ -128,10 +135,16 @@ func GetProgress() (position float64, duration float64, paused bool, err error) 
 	isPaused := ctrl.Paused
 	speaker.Unlock()
 
-	position = float64(pos) / float64(sampleRate)
-	duration = float64(len) / float64(sampleRate)
+	sr := float64(streamerSR)
+	if sr == 0 {
+		sr = float64(sampleRate)
+	}
 
-	return position, duration, isPaused, nil
+	position = float64(pos) / sr
+	duration = float64(len) / sr
+	finished = len > 0 && pos >= len
+
+	return position, duration, isPaused, finished, nil
 }
 
 // Stop stops the playback and releases resources.
