@@ -2,6 +2,8 @@ package goytmusic
 
 import (
 	"errors"
+	"strconv"
+	"strings"
 
 	"github.com/tidwall/gjson"
 )
@@ -15,6 +17,7 @@ type PlaylistsService service
 type Playlist struct {
 	Name     string
 	BrowseID string
+	NTracks  int
 	Tracks   []*Track
 	Author   *User
 }
@@ -94,14 +97,22 @@ func extractPlaylist(res gjson.Result) *Playlist {
 	}
 
 	pl := &Playlist{
-		Name:     render.Get(joinPaths(pTitle, pRun, pText)).String(),
-		BrowseID: render.Get(joinPaths(pTitle, pRun, pNavEndpoint, pBrowseEnd, pBrowseID)).String(),
+		Name:     render.Get(joinPaths(pTitle, pRun0, pText)).String(),
+		BrowseID: render.Get(joinPaths(pTitle, pRun0, pNavEndpoint, pBrowseEnd, pBrowseID)).String(),
 	}
 
-	author := render.Get(joinPaths(pSubtitle, pRun))
+	author := render.Get(joinPaths(pSubtitle, pRun0))
 	if author.Exists() {
 		pl.Author = extractUser(author)
 	}
+
+	nTracksStr := strings.Fields(render.Get(joinPaths(pSubtitle, pRun2, pText)).String())
+
+	pl.NTracks = 0
+	if len(nTracksStr) > 0 {
+		pl.NTracks, _ = strconv.Atoi(nTracksStr[0])
+	}
+
 	return pl
 }
 
@@ -118,7 +129,7 @@ func extractPlaylistWithTracks(b []byte) *Playlist {
 
 	pl := &Playlist{}
 
-	pl.Name = plHeader.Get(joinPaths(pTitle, pRun, pText)).String()
+	pl.Name = plHeader.Get(joinPaths(pTitle, pRun0, pText)).String()
 	pl.Author = extractUser(plHeader)
 	tracks.ForEach(func(key, value gjson.Result) bool {
 		if tr := extractTrack(value); tr != nil {

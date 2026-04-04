@@ -108,7 +108,7 @@ func extractTrackFromQueue(res gjson.Result) *Track {
 		resTr = res.Get(pPlaylistPanelVideoRenderer)
 	}
 
-	tr.Name = resTr.Get(joinPaths(pTitle, pRun, pText)).String()
+	tr.Name = resTr.Get(joinPaths(pTitle, pRun0, pText)).String()
 	buf := resTr.Get(joinPaths(pNavEndpoint, pWatchEnd, pVideoID))
 	if buf.Exists() {
 		tr.VideoID = Ptr(buf.String())
@@ -131,7 +131,7 @@ func extractTrackFromQueue(res gjson.Result) *Track {
 		return true
 	})
 
-	tr.Duration = resTr.Get(joinPaths(pLengthText, pRun, pText)).String()
+	tr.Duration = resTr.Get(joinPaths(pLengthText, pRun0, pText)).String()
 
 	return tr
 }
@@ -141,7 +141,7 @@ func extractTrackFromQueue(res gjson.Result) *Track {
 func extractTrack(res gjson.Result) *Track {
 	tr := &Track{}
 
-	tr.Name = res.Get(joinPaths(pRespListItem, pFlexColumn0, pRespListItemFlexColumn, pText, pRun, pText)).String()
+	tr.Name = res.Get(joinPaths(pRespListItem, pFlexColumn0, pRespListItemFlexColumn, pText, pRun0, pText)).String()
 	buf := res.Get(joinPaths(pRespListItem, pOverlayRenderer, pContent, pMusicPlayButtonRenderer, pPlayNavEndpoint, pWatchEnd))
 	if buf.Exists() {
 		tr.VideoID = Ptr(buf.Get(pVideoID).String())
@@ -159,7 +159,7 @@ func extractTrack(res gjson.Result) *Track {
 		return true
 	})
 
-	album := res.Get(joinPaths(pRespListItem, pFlexColumn2, pRespListItemFlexColumn, pText, pRun))
+	album := res.Get(joinPaths(pRespListItem, pFlexColumn2, pRespListItemFlexColumn, pText, pRun0))
 	if album.Exists() {
 		tr.Album = extractAlbum(&album)
 	}
