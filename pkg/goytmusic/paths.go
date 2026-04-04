@@ -51,6 +51,7 @@ const (
 	pLongByLineText                    = "longBylineText"
 	pBrowseEndContextPageType          = "browseEndpointContextSupportedConfigs.browseEndpointContextMusicConfig.pageType"
 	pContinuation                      = "continuations.0.nextContinuationData.continuation"
+	pLengthText                        = "lengthText"
 )
 
 // joinPaths takes multiple strings s1, s2, ..., sn and join

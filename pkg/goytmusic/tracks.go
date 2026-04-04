@@ -131,6 +131,8 @@ func extractTrackFromQueue(res gjson.Result) *Track {
 		return true
 	})
 
+	tr.Duration = resTr.Get(joinPaths(pLengthText, pRun, pText)).String()
+
 	return tr
 }
 
