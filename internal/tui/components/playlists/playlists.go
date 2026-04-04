@@ -3,6 +3,7 @@ package playlists
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,6 +16,7 @@ type item struct {
 	playlist *goytmusic.Playlist
 }
 
+func (i item) NTracks() int  { return i.playlist.NTracks }
 func (i item) Title() string { return i.playlist.Name }
 func (i item) Author() string {
 	if i.playlist.Author != nil {
@@ -66,7 +68,7 @@ func (d playlistDelegate) Render(w io.Writer, m list.Model, index int, listItem 
 
 	col1 := renderCol(s1Style, i.Title(), w1, 2)
 	col2 := renderCol(s2Style, i.Author(), w2, 2)
-	col3 := renderCol(s3Style, "10 tracks", w3, 0)
+	col3 := renderCol(s3Style, strconv.Itoa(i.NTracks())+" tracks", w3, 0)
 
 	line := lipgloss.JoinHorizontal(lipgloss.Top, col1, col2, col3)
 
